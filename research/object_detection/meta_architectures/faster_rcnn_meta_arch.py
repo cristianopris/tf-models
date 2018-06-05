@@ -1864,8 +1864,8 @@ class FasterRCNNMetaArch(model.DetectionModel):
       normalizer = tf.tile(num_proposals_or_one,
                            [1, self.max_num_proposals]) * batch_size
 
-      print('>>> groundtruth_boxlists', groundtruth_boxlists)
-      print('>>> groundtruth_classes_with_background_list', groundtruth_classes_with_background_list)
+      #print('>>> groundtruth_boxlists', groundtruth_boxlists)
+      #print('>>> groundtruth_classes_with_background_list', groundtruth_classes_with_background_list)
       for i in range(len(groundtruth_classes_with_background_list)):
         groundtruth_classes_with_background_list[i] = tf.Print(groundtruth_classes_with_background_list[i],
                                                                [tf.argmax(groundtruth_classes_with_background_list[i], axis=1)],
@@ -1910,17 +1910,16 @@ class FasterRCNNMetaArch(model.DetectionModel):
           class_predictions_with_background,
           [batch_size, self.max_num_proposals, -1])
 
-      class_predictions_with_background = tf.Print(class_predictions_with_background,
-                                                   [tf.shape(class_predictions_with_background),
-                                                    tf.argmax(batch_cls_targets_with_background, axis=2),
-                                                    batch_cls_targets_with_background[0,0,:]],
-                                                    '>>>> class_predictions_with_background: ')
-      batch_cls_targets_with_background = tf.Print(batch_cls_targets_with_background,
-                                                   [tf.shape(batch_cls_targets_with_background),
-                                                    tf.argmax(batch_cls_targets_with_background, axis=2)],
-                                                   '>>>> batch_cls_targets_with_background: ',
-                                                   summarize=1000,
-                                                   )
+#       class_predictions_with_background = tf.Print(class_predictions_with_background,
+#                                                    [tf.shape(class_predictions_with_background),
+#                                                     tf.argmax(class_predictions_with_background, axis=2)],
+#                                                     '>>>> class_predictions_with_background: ',
+#                                                    summarize=100)
+#       batch_cls_targets_with_background = tf.Print(batch_cls_targets_with_background,
+#                                                    [tf.shape(batch_cls_targets_with_background),
+#                                                     tf.argmax(batch_cls_targets_with_background, axis=2)],
+#                                                    '>>>> batch_cls_targets_with_background: ',
+#                                                    summarize=100)
 
       second_stage_cls_losses = ops.reduce_sum_trailing_dimensions(
           self._second_stage_classification_loss(
@@ -1929,7 +1928,7 @@ class FasterRCNNMetaArch(model.DetectionModel):
               weights=batch_cls_weights),
           ndims=2) / normalizer
 
-      second_stage_cls_losses = tf.Print(second_stage_cls_losses, [second_stage_cls_losses.get_shape()], '>>>> second_stage_cls_losses: ')
+      #second_stage_cls_losses = tf.Print(second_stage_cls_losses, [second_stage_cls_losses.get_shape()], '>>>> second_stage_cls_losses: ')
 
       # second_stage_cls_loss = tf.reduce_sum(
       #     tf.boolean_mask(second_stage_cls_losses, paddings_indicator))
@@ -1941,7 +1940,7 @@ class FasterRCNNMetaArch(model.DetectionModel):
                                         second_stage_cls_loss,
                                         name='classification_loss')
 
-      classification_loss = tf.Print(classification_loss, [classification_loss.shape, classification_loss],
+      classification_loss = tf.Print(classification_loss, [classification_loss],
                                          '>>>> classification_loss: ')
 
       loss_dict = {classification_loss.op.name: classification_loss}
