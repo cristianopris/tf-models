@@ -1524,28 +1524,28 @@ class FasterRCNNMetaArch(model.DetectionModel):
     print('num_detections:', num_detections)
 
     #[num_boxes, num_classes]
-    class_predictions_with_background = tf.Print(class_predictions_with_background,
-                                     [tf.shape(class_predictions_with_background),
-                                      tf.argmax(class_predictions_with_background, axis=1)],
-                                     '>>>> post_proc class_predictions_with_background: ',
-                                     summarize=1000
-                                     )
+#     class_predictions_with_background = tf.Print(class_predictions_with_background,
+#                                      [tf.shape(class_predictions_with_background),
+#                                       tf.argmax(class_predictions_with_background, axis=1)],
+#                                      '>>>> class_predictions_with_background postproc: ',
+#                                      summarize=1000
+#                                      )
     # [1, num_classes]
     avg_class_predictions = tf.reduce_mean(class_predictions_with_background, axis=0, keepdims=True)
     #print('avg_class_predictions.shape:', avg_class_predictions.shape)
 
-    # [1, num_detections]
-    avg_class_predictions = tf.reshape(tf.tile(tf.argmax(avg_class_predictions, axis=1), num_detections), nmsed_classes.shape)
-
-    print('avg_class_predictions.shape:', avg_class_predictions.shape)
-
+    #[1,1]
+    avg_class_predictions = tf.argmax(avg_class_predictions, axis=1)
     avg_class_predictions = tf.Print(avg_class_predictions,
                                      [avg_class_predictions],
-                                     '>>>> post_proc avg_class_predictions: ',
+                                     '>>>> class pred postproc: ',
                                      summarize=1000
                                      )
+    # [1, num_detections]
+    avg_class_predictions = tf.reshape(tf.tile(avg_class_predictions, num_detections), nmsed_classes.shape)
 
-    #num_detections = tf.constant([1.])
+    #print('avg_class_predictions.shape:', avg_class_predictions.shape)
+
 
     detections = {
         fields.DetectionResultFields.detection_boxes: nmsed_boxes,
@@ -1815,27 +1815,27 @@ class FasterRCNNMetaArch(model.DetectionModel):
           [batch_size, self.max_num_proposals, -1])
 
       class_predictions_with_background = tf.Print(class_predictions_with_background,
-                                                   [tf.shape(class_predictions_with_background)],
-                                                    #tf.argmax(class_predictions_with_background, axis=2)],
+                                                   [tf.shape(class_predictions_with_background),
+                                                    tf.argmax(class_predictions_with_background, axis=2)],
                                                     '>>>> class_predictions_with_background: ',
                                                     summarize = 1000)
 
       # average predictions across anchor boxes (proposals)
-      # result: [batch_size, 1, num_classes + 1]
+      # [batch_size, 1, num_classes + 1]
       avg_class_predictions = tf.reduce_mean(class_predictions_with_background, axis=1)
       avg_class_predictions = tf.reshape(avg_class_predictions, [-1, num_classes])
       avg_class_predictions = tf.Print(avg_class_predictions,
                                        [tf.shape(avg_class_predictions),
                                         tf.argmax(avg_class_predictions, axis=1)],
-                                       '>>>> avg_class_predictions: ',
+                                       '>>>> (PRED) class prediction : ',
                                        summarize=1000
                                        )
 
       batch_cls_targets_with_background = tf.reshape(batch_cls_targets_with_background, [-1, num_classes])
       batch_cls_targets_with_background = tf.Print(batch_cls_targets_with_background,
-                                                   [tf.shape(batch_cls_targets_with_background),
+                                                   [#tf.shape(batch_cls_targets_with_background),
                                                     tf.argmax(batch_cls_targets_with_background, axis=1)],
-                                                   '>>>> batch_cls_targets_with_background: ',
+                                                   '>>>> (LABEL) class target : ',
                                                    summarize=1000
                                                    )
 

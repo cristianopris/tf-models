@@ -95,6 +95,7 @@ import tensorflow as tf
 from google.protobuf import text_format
 from object_detection import exporter
 from object_detection.protos import pipeline_pb2
+import os
 
 slim = tf.contrib.slim
 flags = tf.app.flags
@@ -127,6 +128,7 @@ FLAGS = flags.FLAGS
 
 
 def main(_):
+  #os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
   pipeline_config = pipeline_pb2.TrainEvalPipelineConfig()
   with tf.gfile.GFile(FLAGS.pipeline_config_path, 'r') as f:
     text_format.Merge(f.read(), pipeline_config)

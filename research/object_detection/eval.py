@@ -84,7 +84,7 @@ FLAGS = flags.FLAGS
 
 def main(unused_argv):
   
-  os.environ['CUDA_VISIBLE_DEVICES'] = '-1'	
+  #os.environ['CUDA_VISIBLE_DEVICES'] = '-1'	
   assert FLAGS.checkpoint_dir, '`checkpoint_dir` is missing.'
   assert FLAGS.eval_dir, '`eval_dir` is missing.'
   tf.gfile.MakeDirs(FLAGS.eval_dir)
@@ -145,7 +145,7 @@ def main(unused_argv):
       FLAGS.eval_dir,
       graph_hook_fn=graph_rewriter_fn)
 
-  return evaluator, metrics, model
+  return metrics, model
 
 
 if __name__ == '__main__':
