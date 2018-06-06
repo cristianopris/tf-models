@@ -1575,7 +1575,7 @@ class FasterRCNNMetaArch(model.DetectionModel):
         fields.DetectionResultFields.detection_boxes: proposal_boxes_normalized,
         fields.DetectionResultFields.detection_scores: nmsed_scores,
         fields.DetectionResultFields.detection_classes: avg_class_predictions,
-        fields.DetectionResultFields.num_detections: tf.to_float(num_detections)
+        fields.DetectionResultFields.num_detections: tf.to_float(num_proposals)
     }
     # if nmsed_masks is not None:
     #   detections[fields.DetectionResultFields.detection_masks] = nmsed_masks
