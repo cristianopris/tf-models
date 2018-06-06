@@ -748,7 +748,7 @@ class FasterRCNNMetaArch(model.DetectionModel):
     tf.stop_gradient(rpn_features_to_crop)
 
     image_shape_2d = self._image_batch_shape_2d(image_shape)
-    proposal_boxes_normalized, _, num_proposals = self._postprocess_rpn(
+    proposal_boxes_normalized, proposal_scores, num_proposals = self._postprocess_rpn(
         rpn_box_encodings, rpn_objectness_predictions_with_background,
         anchors, image_shape_2d, true_image_shapes)
 
@@ -785,6 +785,7 @@ class FasterRCNNMetaArch(model.DetectionModel):
         'proposal_boxes': absolute_proposal_boxes,
         'box_classifier_features': box_classifier_features,
         'proposal_boxes_normalized': proposal_boxes_normalized,
+        'proposal_scores': proposal_scores
     }
 
     return prediction_dict
@@ -847,6 +848,7 @@ class FasterRCNNMetaArch(model.DetectionModel):
           prediction_dict['refined_box_encodings'],
           prediction_dict['class_predictions_with_background'],
           prediction_dict['proposal_boxes'],
+          prediction_dict['proposal_scores'],
           prediction_dict['num_proposals'],
           image_shapes)
       prediction_dict.update(detections_dict)
@@ -1096,14 +1098,14 @@ class FasterRCNNMetaArch(model.DetectionModel):
 
     with tf.name_scope('FirstStagePostprocessor'):
       if self._number_of_stages == 1:
-        proposal_boxes, proposal_scores, num_proposals = self._postprocess_rpn(
+        norm_proposal_boxes, proposal_scores, num_proposals = self._postprocess_rpn(
             prediction_dict['rpn_box_encodings'],
             prediction_dict['rpn_objectness_predictions_with_background'],
             prediction_dict['anchors'],
             true_image_shapes,
             true_image_shapes)
         return {
-            fields.DetectionResultFields.detection_boxes: proposal_boxes,
+            fields.DetectionResultFields.detection_boxes: norm_proposal_boxes,
             fields.DetectionResultFields.detection_scores: proposal_scores,
             fields.DetectionResultFields.num_detections:
                 tf.to_float(num_proposals),
@@ -1119,6 +1121,8 @@ class FasterRCNNMetaArch(model.DetectionModel):
             prediction_dict['refined_box_encodings'],
             prediction_dict['class_predictions_with_background'],
             prediction_dict['proposal_boxes'],
+            prediction_dict['proposal_boxes_normalized'],
+            prediction_dict['proposal_scores'],
             prediction_dict['num_proposals'],
             true_image_shapes,
             mask_predictions=mask_predictions)
@@ -1445,6 +1449,8 @@ class FasterRCNNMetaArch(model.DetectionModel):
                                   refined_box_encodings,
                                   class_predictions_with_background,
                                   proposal_boxes,
+                                  proposal_boxes_normalized,
+                                  proposal_scores,
                                   num_proposals,
                                   image_shapes,
                                   mask_predictions=None):
@@ -1523,6 +1529,12 @@ class FasterRCNNMetaArch(model.DetectionModel):
     print('nmsed_scores.shape:', nmsed_scores.shape)
     print('num_detections:', num_detections)
 
+    # num_proposals = tf.Print(num_proposals,
+    #                                  [num_detections],
+    #                                  '>>>> num_detections: ',
+    #                                  summarize=1000
+    #                                  )
+
     #[num_boxes, num_classes]
     class_predictions_with_background = tf.Print(class_predictions_with_background,
                                      [tf.shape(class_predictions_with_background),
@@ -1535,9 +1547,21 @@ class FasterRCNNMetaArch(model.DetectionModel):
     #print('avg_class_predictions.shape:', avg_class_predictions.shape)
 
     # [1, num_detections]
-    avg_class_predictions = tf.reshape(tf.tile(tf.argmax(avg_class_predictions, axis=1), num_detections), nmsed_classes.shape)
+    avg_class_predictions = tf.reshape(tf.tile(tf.argmax(avg_class_predictions, axis=1), num_proposals), tf.shape(proposal_scores))
 
     print('avg_class_predictions.shape:', avg_class_predictions.shape)
+    print('proposal_scores.shape', proposal_scores.shape)
+
+    avg_class_predictions = tf.Print(avg_class_predictions,
+                             [nmsed_boxes.shape, nmsed_boxes],
+                             '>>>> nmsed_boxes: ',
+                             summarize=1000
+                             )
+    avg_class_predictions = tf.Print(avg_class_predictions,
+                             [proposal_boxes_normalized.shape, proposal_boxes_normalized],
+                             '>>>> proposal_boxes_normalized: ',
+                             summarize=1000
+                             )
 
     avg_class_predictions = tf.Print(avg_class_predictions,
                                      [avg_class_predictions],
@@ -1548,13 +1572,13 @@ class FasterRCNNMetaArch(model.DetectionModel):
     #num_detections = tf.constant([1.])
 
     detections = {
-        fields.DetectionResultFields.detection_boxes: nmsed_boxes,
-        fields.DetectionResultFields.detection_scores:  nmsed_scores,
+        fields.DetectionResultFields.detection_boxes: proposal_boxes_normalized,
+        fields.DetectionResultFields.detection_scores: nmsed_scores,
         fields.DetectionResultFields.detection_classes: avg_class_predictions,
         fields.DetectionResultFields.num_detections: tf.to_float(num_detections)
     }
-    if nmsed_masks is not None:
-      detections[fields.DetectionResultFields.detection_masks] = nmsed_masks
+    # if nmsed_masks is not None:
+    #   detections[fields.DetectionResultFields.detection_masks] = nmsed_masks
     return detections
 
   def _batch_decode_boxes(self, box_encodings, anchor_boxes):
