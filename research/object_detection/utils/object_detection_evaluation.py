@@ -101,9 +101,12 @@ class DetectionEvaluator(object):
     pass
 
 
-class SimpleClassificationEvaluator(DetectionEvaluator):
+class SimpleClassificationEvaluator(DetectionEvaluator):  
+    
   def __init__(self, categories):
       super(SimpleClassificationEvaluator, self).__init__(categories)
+      self.gt_infos = []
+      self.pred_infos = []
 
   def add_single_ground_truth_image_info(self, image_id, groundtruth_dict):
     """Adds groundtruth for a single image to be used for evaluation.
@@ -113,7 +116,9 @@ class SimpleClassificationEvaluator(DetectionEvaluator):
       groundtruth_dict: A dictionary of groundtruth numpy arrays required
         for evaluations.
     """
-    print('add gt image', image_id, groundtruth_dict)
+    #print('>>> gt image', image_id, groundtruth_dict.keys(), 'detected_classes', groundtruth_dict['groundtruth_classes'])
+    self.gt_infos.append(groundtruth_dict['groundtruth_classes'][0])
+    
 
   def add_single_detected_image_info(self, image_id, detections_dict):
     """Adds detections for a single image to be used for evaluation.
@@ -123,16 +128,21 @@ class SimpleClassificationEvaluator(DetectionEvaluator):
       detections_dict: A dictionary of detection numpy arrays required
         for evaluation.
     """
-    print('add pred image', image_id, detections_dict)
-
+    #print('>>> detected image', image_id, detections_dict.keys(), 'detected_classes', detections_dict['detection_classes'])
+    pred = detections_dict['detection_classes'][0] - 1
+    self.pred_infos.append(pred)    
 
   def evaluate(self):
     """Evaluates detections and returns a dictionary of metrics."""
-    return {}
+    print('self.gt_infos:', self.gt_infos)
+    print('self.pred_infos', self.pred_infos)
+    acc = np.mean(np.asarray(self.gt_infos) == np.asarray(self.pred_infos))
+    return {'accurracy': acc}
 
   def clear(self):
     """Clears the state to prepare for a fresh evaluation."""
-    pass
+    self.gt_infos = []
+    self.pred_infos = []
 
 
 class ObjectDetectionEvaluator(DetectionEvaluator):
