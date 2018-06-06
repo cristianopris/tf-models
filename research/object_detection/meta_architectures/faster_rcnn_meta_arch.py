@@ -1107,6 +1107,7 @@ class FasterRCNNMetaArch(model.DetectionModel):
             fields.DetectionResultFields.detection_scores: proposal_scores,
             fields.DetectionResultFields.num_detections:
                 tf.to_float(num_proposals),
+
         }
 
     # TODO(jrru): Remove mask_predictions from _post_process_box_classifier.
@@ -1517,10 +1518,39 @@ class FasterRCNNMetaArch(model.DetectionModel):
          change_coordinate_frame=True,
          num_valid_boxes=num_proposals,
          masks=mask_predictions_batch)
+
+    print('nmsed_classes.shape:', nmsed_classes.shape)
+    print('nmsed_scores.shape:', nmsed_scores.shape)
+    print('num_detections:', num_detections)
+
+    #[num_boxes, num_classes]
+    class_predictions_with_background = tf.Print(class_predictions_with_background,
+                                     [tf.shape(class_predictions_with_background),
+                                      tf.argmax(class_predictions_with_background, axis=1)],
+                                     '>>>> post_proc class_predictions_with_background: ',
+                                     summarize=1000
+                                     )
+    # [1, num_classes]
+    avg_class_predictions = tf.reduce_mean(class_predictions_with_background, axis=0, keepdims=True)
+    #print('avg_class_predictions.shape:', avg_class_predictions.shape)
+
+    # [1, num_detections]
+    avg_class_predictions = tf.reshape(tf.tile(tf.argmax(avg_class_predictions, axis=1), num_detections), nmsed_classes.shape)
+
+    print('avg_class_predictions.shape:', avg_class_predictions.shape)
+
+    avg_class_predictions = tf.Print(avg_class_predictions,
+                                     [avg_class_predictions],
+                                     '>>>> post_proc avg_class_predictions: ',
+                                     summarize=1000
+                                     )
+
+    #num_detections = tf.constant([1.])
+
     detections = {
         fields.DetectionResultFields.detection_boxes: nmsed_boxes,
-        fields.DetectionResultFields.detection_scores: nmsed_scores,
-        fields.DetectionResultFields.detection_classes: nmsed_classes,
+        fields.DetectionResultFields.detection_scores:  nmsed_scores,
+        fields.DetectionResultFields.detection_classes: avg_class_predictions,
         fields.DetectionResultFields.num_detections: tf.to_float(num_detections)
     }
     if nmsed_masks is not None:
@@ -1784,11 +1814,11 @@ class FasterRCNNMetaArch(model.DetectionModel):
           class_predictions_with_background,
           [batch_size, self.max_num_proposals, -1])
 
-      # class_predictions_with_background = tf.Print(class_predictions_with_background,
-      #                                              [tf.shape(class_predictions_with_background)],
-      #                                               #tf.argmax(class_predictions_with_background, axis=2)],
-      #                                               '>>>> class_predictions_with_background: ',
-      #                                               summarize = 1000)
+      class_predictions_with_background = tf.Print(class_predictions_with_background,
+                                                   [tf.shape(class_predictions_with_background)],
+                                                    #tf.argmax(class_predictions_with_background, axis=2)],
+                                                    '>>>> class_predictions_with_background: ',
+                                                    summarize = 1000)
 
       # average predictions across anchor boxes (proposals)
       # result: [batch_size, 1, num_classes + 1]

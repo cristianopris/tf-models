@@ -571,6 +571,8 @@ def result_dict_for_single_example(image,
       groundtruth_classes = tf.ones_like(groundtruth_classes, dtype=tf.int64)
       output_dict[input_data_fields.groundtruth_classes] = groundtruth_classes
 
+    output_dict['extra_detections'] = detections['extra_detections']
+
   return output_dict
 
 
