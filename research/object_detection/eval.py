@@ -78,6 +78,7 @@ flags.DEFINE_string('model_config_path', '',
 flags.DEFINE_boolean('run_once', False, 'Option to only run a single pass of '
                      'evaluation. Overrides the `max_evals` parameter in the '
                      'provided config.')
+
 FLAGS = flags.FLAGS
 
 
@@ -135,7 +136,7 @@ def main(unused_argv):
     graph_rewriter_fn = graph_rewriter_builder.build(
         configs['graph_rewriter_config'], is_training=False)
 
-  evaluator.evaluate(
+  metrics, model = evaluator.evaluate(
       create_input_dict_fn,
       model_fn,
       eval_config,
@@ -143,6 +144,8 @@ def main(unused_argv):
       FLAGS.checkpoint_dir,
       FLAGS.eval_dir,
       graph_hook_fn=graph_rewriter_fn)
+
+  return evaluator, metrics, model
 
 
 if __name__ == '__main__':

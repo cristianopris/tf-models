@@ -101,6 +101,40 @@ class DetectionEvaluator(object):
     pass
 
 
+class SimpleClassificationEvaluator(DetectionEvaluator):
+  def __init__(self, categories):
+      super(SimpleClassificationEvaluator, self).__init__(categories)
+
+  def add_single_ground_truth_image_info(self, image_id, groundtruth_dict):
+    """Adds groundtruth for a single image to be used for evaluation.
+
+    Args:
+      image_id: A unique string/integer identifier for the image.
+      groundtruth_dict: A dictionary of groundtruth numpy arrays required
+        for evaluations.
+    """
+    print('add gt image', image_id, groundtruth_dict)
+
+  def add_single_detected_image_info(self, image_id, detections_dict):
+    """Adds detections for a single image to be used for evaluation.
+
+    Args:
+      image_id: A unique string/integer identifier for the image.
+      detections_dict: A dictionary of detection numpy arrays required
+        for evaluation.
+    """
+    print('add pred image', image_id, detections_dict)
+
+
+  def evaluate(self):
+    """Evaluates detections and returns a dictionary of metrics."""
+    return {}
+
+  def clear(self):
+    """Clears the state to prepare for a fresh evaluation."""
+    pass
+
+
 class ObjectDetectionEvaluator(DetectionEvaluator):
   """A class to evaluate detections."""
 

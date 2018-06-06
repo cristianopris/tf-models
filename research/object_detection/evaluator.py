@@ -255,6 +255,10 @@ def evaluate(create_input_dict_fn, create_model_fn, eval_config, categories,
   if not evaluator_list:
     evaluator_list = get_evaluators(eval_config, categories)
 
+  evaluator_list = [object_detection_evaluation.SimpleClassificationEvaluator(categories)]
+  print('>>> evaluator_list', evaluator_list)
+
+
   metrics = eval_util.repeated_checkpoint_run(
       tensor_dict=tensor_dict,
       summary_dir=eval_dir,
@@ -273,4 +277,7 @@ def evaluate(create_input_dict_fn, create_model_fn, eval_config, categories,
       save_graph_dir=(eval_dir if eval_config.save_graph else ''),
       losses_dict=losses_dict)
 
-  return metrics
+  return metrics, model
+
+
+
