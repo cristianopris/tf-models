@@ -1488,46 +1488,46 @@ class FasterRCNNMetaArch(model.DetectionModel):
           that a pixel-wise sigmoid score converter is applied to the detection
           masks.
     """
-    refined_box_encodings_batch = tf.reshape(
-        refined_box_encodings,
-        [-1,
-         self.max_num_proposals,
-         refined_box_encodings.shape[1],
-         self._box_coder.code_size])
-    class_predictions_with_background_batch = tf.reshape(
-        class_predictions_with_background,
-        [-1, self.max_num_proposals, self.num_classes + 1]
-    )
-    refined_decoded_boxes_batch = self._batch_decode_boxes(
-        refined_box_encodings_batch, proposal_boxes)
-    class_predictions_with_background_batch = (
-        self._second_stage_score_conversion_fn(
-            class_predictions_with_background_batch))
-    class_predictions_batch = tf.reshape(
-        tf.slice(class_predictions_with_background_batch,
-                 [0, 0, 1], [-1, -1, -1]),
-        [-1, self.max_num_proposals, self.num_classes])
-    clip_window = self._compute_clip_window(image_shapes)
-    mask_predictions_batch = None
-    if mask_predictions is not None:
-      mask_height = mask_predictions.shape[2].value
-      mask_width = mask_predictions.shape[3].value
-      mask_predictions = tf.sigmoid(mask_predictions)
-      mask_predictions_batch = tf.reshape(
-          mask_predictions, [-1, self.max_num_proposals,
-                             self.num_classes, mask_height, mask_width])
-    (nmsed_boxes, nmsed_scores, nmsed_classes, nmsed_masks, _,
-     num_detections) = self._second_stage_nms_fn(
-         refined_decoded_boxes_batch,
-         class_predictions_batch,
-         clip_window=clip_window,
-         change_coordinate_frame=True,
-         num_valid_boxes=num_proposals,
-         masks=mask_predictions_batch)
+#     refined_box_encodings_batch = tf.reshape(
+#         refined_box_encodings,
+#         [-1,
+#          self.max_num_proposals,
+#          refined_box_encodings.shape[1],
+#          self._box_coder.code_size])
+#     class_predictions_with_background_batch = tf.reshape(
+#         class_predictions_with_background,
+#         [-1, self.max_num_proposals, self.num_classes + 1]
+#     )
+#     refined_decoded_boxes_batch = self._batch_decode_boxes(
+#         refined_box_encodings_batch, proposal_boxes)
+#     class_predictions_with_background_batch = (
+#         self._second_stage_score_conversion_fn(
+#             class_predictions_with_background_batch))
+#     class_predictions_batch = tf.reshape(
+#         tf.slice(class_predictions_with_background_batch,
+#                  [0, 0, 1], [-1, -1, -1]),
+#         [-1, self.max_num_proposals, self.num_classes])
+#     clip_window = self._compute_clip_window(image_shapes)
+#     mask_predictions_batch = None
+#     if mask_predictions is not None:
+#       mask_height = mask_predictions.shape[2].value
+#       mask_width = mask_predictions.shape[3].value
+#       mask_predictions = tf.sigmoid(mask_predictions)
+#       mask_predictions_batch = tf.reshape(
+#           mask_predictions, [-1, self.max_num_proposals,
+#                              self.num_classes, mask_height, mask_width])
+#     (nmsed_boxes, nmsed_scores, nmsed_classes, nmsed_masks, _,
+#      num_detections) = self._second_stage_nms_fn(
+#          refined_decoded_boxes_batch,
+#          class_predictions_batch,
+#          clip_window=clip_window,
+#          change_coordinate_frame=True,
+#          num_valid_boxes=num_proposals,
+#          masks=mask_predictions_batch)
 
-    print('nmsed_classes.shape:', nmsed_classes.shape)
-    print('nmsed_scores.shape:', nmsed_scores.shape)
-    print('num_detections:', num_detections)
+#     print('nmsed_classes.shape:', nmsed_classes.shape)
+#     print('nmsed_scores.shape:', nmsed_scores.shape)
+#     print('num_detections:', num_detections)
 
     # num_proposals = tf.Print(num_proposals,
     #                                  [num_detections],
@@ -1552,16 +1552,12 @@ class FasterRCNNMetaArch(model.DetectionModel):
     print('avg_class_predictions.shape:', avg_class_predictions.shape)
     print('proposal_scores.shape', proposal_scores.shape)
 
-    avg_class_predictions = tf.Print(avg_class_predictions,
-                             [nmsed_boxes.shape, nmsed_boxes],
-                             '>>>> nmsed_boxes: ',
-                             summarize=1000
-                             )
-    avg_class_predictions = tf.Print(avg_class_predictions,
-                             [proposal_boxes_normalized.shape, proposal_boxes_normalized],
-                             '>>>> proposal_boxes_normalized: ',
-                             summarize=1000
-                             )
+
+#     avg_class_predictions = tf.Print(avg_class_predictions,
+#                              [tf.shape(proposal_boxes_normalized), proposal_boxes_normalized],
+#                              '>>>> proposal_boxes_normalized: ',
+#                              summarize=1000
+#                              )
 
     avg_class_predictions = tf.Print(avg_class_predictions,
                                      [avg_class_predictions],
@@ -1573,7 +1569,7 @@ class FasterRCNNMetaArch(model.DetectionModel):
 
     detections = {
         fields.DetectionResultFields.detection_boxes: proposal_boxes_normalized,
-        fields.DetectionResultFields.detection_scores: nmsed_scores,
+        fields.DetectionResultFields.detection_scores: proposal_scores,
         fields.DetectionResultFields.detection_classes: avg_class_predictions,
         fields.DetectionResultFields.num_detections: tf.to_float(num_proposals)
     }

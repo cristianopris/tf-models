@@ -73,8 +73,11 @@ def _extract_predictions_and_losses(model,
   original_image = tf.expand_dims(input_dict[fields.InputDataFields.image], 0)
   preprocessed_image, true_image_shapes = model.preprocess(
       tf.to_float(original_image))
+  #print('Running predict..')
   prediction_dict = model.predict(preprocessed_image, true_image_shapes)
+  #print('Running process..')
   detections = model.postprocess(prediction_dict, true_image_shapes)
+  #print('Done')    
 
   groundtruth = None
   losses_dict = {}
