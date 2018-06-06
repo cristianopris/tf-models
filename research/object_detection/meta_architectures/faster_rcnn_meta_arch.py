@@ -1739,6 +1739,11 @@ class FasterRCNNMetaArch(model.DetectionModel):
                                       name='localization_loss')
       objectness_loss = tf.multiply(self._first_stage_obj_loss_weight,
                                     objectness_loss, name='objectness_loss')
+        
+      if self._number_of_stages > 1:
+            tf.stop_gradient(localization_loss)
+            tf.stop_gradient(objectness_loss)
+    
       loss_dict = {localization_loss.op.name: localization_loss,
                    objectness_loss.op.name: objectness_loss}
     return loss_dict
@@ -1820,20 +1825,41 @@ class FasterRCNNMetaArch(model.DetectionModel):
       print('>>> groundtruth_boxlists', groundtruth_boxlists)
       print('>>> groundtruth_classes_with_background_list', groundtruth_classes_with_background_list)
 
-      cls_targets=[]
-      for i in range(len(groundtruth_classes_with_background_list)):
-        # assumes only one labeled box per image
-        cls_targets.append(groundtruth_classes_with_background_list[i][0])
 
-      batch_cls_targets_with_background = tf.stack(cls_targets)
+      
+    
+      ##### SETUP CLASS TARGETS
+#       cls_targets=[]
+#       for i in range(len(groundtruth_classes_with_background_list)):
+#         # assumes only one labeled box per image
+#         cls_targets.append(groundtruth_classes_with_background_list[i][0])
+  
+      
+      cls_targets_list = []
 
-      num_classes = tf.shape(batch_cls_targets_with_background)[1]
-
+      for gt_class_targets, anchors in zip(groundtruth_classes_with_background_list, proposal_boxlists):
+        num_classes = tf.shape(gt_class_targets)[1]
+        num_anchors = anchors.num_boxes()
+        
+        #use the class target of the first ground truth box for all proposals (anchors)
+        cls_targets_list.append(gt_class_targets[0])
+        
+      batch_cls_targets_with_background = tf.stack(cls_targets_list)
+      #####  
+      
+      #batch_cls_targets_with_background = tf.reshape(batch_cls_targets_with_background, [-1, num_classes])
+      batch_cls_targets_with_background = tf.Print(batch_cls_targets_with_background,
+                                                   [tf.shape(batch_cls_targets_with_background),
+                                                    tf.argmax(batch_cls_targets_with_background, axis=1)],
+                                                   '>>>> batch_cls_targets_with_background: ',
+                                                   summarize=1000
+                                                   )
+          
       #[batch_size, achors, num_classes + 1]
       class_predictions_with_background = tf.reshape(
           class_predictions_with_background,
           [batch_size, self.max_num_proposals, -1])
-
+        
       class_predictions_with_background = tf.Print(class_predictions_with_background,
                                                    [tf.shape(class_predictions_with_background)],
                                                     #tf.argmax(class_predictions_with_background, axis=2)],
@@ -1851,14 +1877,7 @@ class FasterRCNNMetaArch(model.DetectionModel):
                                        summarize=1000
                                        )
 
-      batch_cls_targets_with_background = tf.reshape(batch_cls_targets_with_background, [-1, num_classes])
-      batch_cls_targets_with_background = tf.Print(batch_cls_targets_with_background,
-                                                   [tf.shape(batch_cls_targets_with_background),
-                                                    tf.argmax(batch_cls_targets_with_background, axis=1)],
-                                                   '>>>> batch_cls_targets_with_background: ',
-                                                   summarize=1000
-                                                   )
-
+      
       classification_loss = tf.nn.softmax_cross_entropy_with_logits(
           labels=batch_cls_targets_with_background,
           logits=avg_class_predictions)
