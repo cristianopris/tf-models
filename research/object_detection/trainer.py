@@ -313,11 +313,21 @@ def train(create_tensor_dict_fn,
             biases_regex_list,
             multiplier=train_config.bias_grad_multiplier)
 
+      print("\n=== VARIABLES: ===\n")
+      for (g, v) in grads_and_vars:
+        print('>>: ', v.name)
+  
       # Optionally freeze some layers by setting their gradients to be zero.
       if train_config.freeze_variables:
         grads_and_vars = variables_helper.freeze_gradients_matching_regex(
             grads_and_vars, train_config.freeze_variables)
 
+      print("\n=== TRAINABLE VARIABLES: ===\n")
+      for (g, v) in grads_and_vars:
+          print('>>TRAIN: ', g.name)
+        
+    
+    
       # Optionally clip gradients
       if train_config.gradient_clipping_by_norm > 0:
         with tf.name_scope('clip_grads'):

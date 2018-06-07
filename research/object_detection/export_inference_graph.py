@@ -128,7 +128,7 @@ FLAGS = flags.FLAGS
 
 
 def main(_):
-  #os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+  os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
   pipeline_config = pipeline_pb2.TrainEvalPipelineConfig()
   with tf.gfile.GFile(FLAGS.pipeline_config_path, 'r') as f:
     text_format.Merge(f.read(), pipeline_config)
